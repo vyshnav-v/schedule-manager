@@ -6,11 +6,16 @@ import { toDateKey, getWeekDays } from '../utils/date';
 
 /** Fetches workers and the selected worker's shifts for the timesheet. */
 export function useTimesheetData() {
-  const { selectedWorker, weekStart, setWorkers, setLoading, fillFromShifts } = useTimesheetStore();
+  const { selectedWorker, weekStart, setWorkers, setSelectedWorker, setLoading, fillFromShifts } = useTimesheetStore();
 
-  // Load workers once on mount
+  // Load workers once on mount, then auto-select the first one
   useEffect(() => {
-    workerApi.getAll().then(setWorkers).catch(console.error);
+    workerApi.getAll().then((workers) => {
+      setWorkers(workers);
+      if (!useTimesheetStore.getState().selectedWorker && workers.length > 0) {
+        setSelectedWorker(workers[0]);
+      }
+    }).catch(console.error);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -17,7 +17,7 @@ function timeToHM(t: string): { h: string; m: string } {
 export default function ShiftModal() {
   const {
     shiftModal, closeShiftModal, shifts,
-    workers, links,
+    workers,
     getLinkedParticipants,
     addShift, updateShift,
   } = useScheduleStore();
@@ -38,7 +38,8 @@ export default function ShiftModal() {
   const [saving,         setSaving]         = useState(false);
   const [errors,         setErrors]         = useState<Record<string, boolean>>({});
 
-  // Pre-fill on open
+  // Pre-fill on open — intentionally only re-runs when modal opens/closes,
+  // not on every prefill prop change (they are captured at open time)
   useEffect(() => {
     if (!isOpen) return;
     if (mode === 'edit' && existing) {
@@ -59,6 +60,7 @@ export default function ShiftModal() {
       setNotes('');
     }
     setErrors({});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const linkedParticipants = workerId ? getLinkedParticipants(workerId) : [];
@@ -108,10 +110,12 @@ export default function ShiftModal() {
         // Ensure populated objects — fall back to store data if server returns plain IDs
         const { workers: storeWorkers, participants: storeParticipants } = useScheduleStore.getState();
         if (typeof created.workerId === 'string' || !created.workerId?.name) {
-          (created as any).workerId = storeWorkers.find((w) => w._id === (created.workerId as unknown as string)) ?? created.workerId;
+          (created as unknown as Record<string, unknown>).workerId =
+            storeWorkers.find((w) => w._id === (created.workerId as unknown as string)) ?? created.workerId;
         }
         if (typeof created.participantId === 'string' || !created.participantId?.name) {
-          (created as any).participantId = storeParticipants.find((p) => p._id === (created.participantId as unknown as string)) ?? created.participantId;
+          (created as unknown as Record<string, unknown>).participantId =
+            storeParticipants.find((p) => p._id === (created.participantId as unknown as string)) ?? created.participantId;
         }
         addShift(created);
       }

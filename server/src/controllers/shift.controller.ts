@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { Types } from 'mongoose';
 import Shift from '../models/Shift';
 import Worker from '../models/Worker';
 import Participant from '../models/Participant';
@@ -65,8 +66,10 @@ export async function updateShift(req: Request, res: Response): Promise<void> {
     res.status(404).json({ error: 'Shift not found' });
     return;
   }
-  const worker = await Worker.findById((shift.workerId as any)?._id ?? shift.workerId).lean();
-  const participant = await Participant.findById((shift.participantId as any)?._id ?? shift.participantId).lean();
+  const workerId      = (shift.workerId instanceof Types.ObjectId) ? shift.workerId : (shift.workerId as { _id: Types.ObjectId })?._id ?? shift.workerId;
+  const participantId = (shift.participantId instanceof Types.ObjectId) ? shift.participantId : (shift.participantId as { _id: Types.ObjectId })?._id ?? shift.participantId;
+  const worker      = await Worker.findById(workerId).lean();
+  const participant = await Participant.findById(participantId).lean();
   await logShiftAction('UPDATE', shift.toObject(), worker?.name, participant?.name);
   res.json(shift);
 }
