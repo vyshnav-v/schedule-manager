@@ -18,14 +18,16 @@ export default function LogsPageClient() {
   const [loading, setLoading] = useState(true);
   const [filter,  setFilter]  = useState('');
   const [page,    setPage]    = useState(1);
+  const [error,   setError]   = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
+    setError(null);
     try {
       const data = await logApi.getAll({ limit: 500 });
       setLogs(data);
     } catch (e) {
-      console.error(e);
+      setError((e as Error).message);
     } finally {
       setLoading(false);
     }
@@ -109,6 +111,21 @@ export default function LogsPageClient() {
           {/* Table */}
           {loading ? (
             <div className="p-12 text-center text-slate-400 text-sm animate-pulse">Loading logs…</div>
+          ) : error ? (
+            <div className="p-8 flex flex-col items-center gap-3 text-center">
+              <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-700">Failed to load logs</p>
+                <p className="text-xs text-slate-400 mt-1">{error}</p>
+              </div>
+              <button onClick={load} className="mt-1 px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+                Retry
+              </button>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm" style={{ minWidth: 900 }}>
@@ -155,7 +172,7 @@ export default function LogsPageClient() {
           )}
 
           {/* Footer: count + pagination */}
-          {!loading && (
+          {!loading && !error && (
             <div className="px-4 py-3 border-t border-slate-200 bg-slate-50 flex items-center justify-between flex-wrap gap-3">
 
               {/* Entry count */}

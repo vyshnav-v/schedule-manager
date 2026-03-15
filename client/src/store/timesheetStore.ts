@@ -48,6 +48,7 @@ interface TimesheetStore {
   entryTypes:      EntryType[];
   rows:            AllRows;
   isLoading:       boolean;
+  error:           string | null;
 
   // Actions
   setWorkers:       (w: Worker[])      => void;
@@ -58,12 +59,13 @@ interface TimesheetStore {
   setInputType:     (t: InputType)     => void;
   changeWeek:       (delta: number)    => void;
   setLoading:       (v: boolean)       => void;
+  setError:         (e: string | null) => void;
 
   /** Populate the Regular Hours row from API shift data */
   fillFromShifts: (shifts: Shift[], weekDayKeys: string[]) => void;
 
   updateCell: (rowId: string, day: string, field: keyof TimesheetCell, value: string | number) => void;
-  addRow:     (label: string) => void;
+  addRow:     (label: string, icon?: string) => void;
 
   getDayTotal:   (dayKey: string) => number;
   getRowTotal:   (rowId: string) => number;
@@ -82,6 +84,7 @@ export const useTimesheetStore = create<TimesheetStore>((set, get) => ({
   entryTypes:      ENTRY_TYPES,
   rows:            initRows(ENTRY_TYPES),
   isLoading:       false,
+  error:           null,
 
   setWorkers:       (workers)         => set({ workers }),
   setSelectedWorker:(selectedWorker)  => set({ selectedWorker }),
@@ -90,6 +93,7 @@ export const useTimesheetStore = create<TimesheetStore>((set, get) => ({
   setTimesheetType: (timesheetType)   => set({ timesheetType }),
   setInputType:     (inputType)       => set({ inputType }),
   setLoading:       (isLoading)       => set({ isLoading }),
+  setError:         (error)           => set({ error }),
 
   changeWeek: (delta) =>
     set((st) => {
@@ -139,10 +143,10 @@ export const useTimesheetStore = create<TimesheetStore>((set, get) => ({
       return { rows };
     }),
 
-  addRow: (label) =>
+  addRow: (label, icon = 'work') =>
     set((st) => {
       const id = label.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now();
-      const newType: EntryType = { id, label, icon: 'work' };
+      const newType: EntryType = { id, label, icon };
       const newRow: RowData = {};
       DAYS.forEach((d) => { newRow[d] = emptyCell(); });
       return {

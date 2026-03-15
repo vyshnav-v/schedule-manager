@@ -6,16 +6,34 @@ import type {
 
 // ─── Base fetch wrapper ───────────────────────────────────────────────────────
 
+const TIMEOUT_MS = 10_000;
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || `Request failed: ${res.status}`);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      ...options,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error || `Request failed: ${res.status}`);
+    }
+    return res.json() as Promise<T>;
+  } catch (e) {
+    if (e instanceof DOMException && e.name === 'AbortError') {
+      throw new Error('Request timed out — server took too long to respond.');
+    }
+    if (e instanceof TypeError && e.message.includes('fetch')) {
+      throw new Error('Cannot reach the server. Make sure it is running on port 5000.');
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
   }
-  return res.json() as Promise<T>;
 }
 
 // ─── Workers ──────────────────────────────────────────────────────────────────

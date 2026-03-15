@@ -6,7 +6,7 @@ import { toDateKey, getWeekDays } from '../utils/date';
 
 /** Fetches workers and the selected worker's shifts for the timesheet. */
 export function useTimesheetData() {
-  const { selectedWorker, weekStart, setWorkers, setSelectedWorker, setLoading, fillFromShifts } = useTimesheetStore();
+  const { selectedWorker, weekStart, setWorkers, setSelectedWorker, setLoading, setError, fillFromShifts } = useTimesheetStore();
 
   // Load workers once on mount, then auto-select the first one
   useEffect(() => {
@@ -15,7 +15,7 @@ export function useTimesheetData() {
       if (!useTimesheetStore.getState().selectedWorker && workers.length > 0) {
         setSelectedWorker(workers[0]);
       }
-    }).catch(console.error);
+    }).catch((e: Error) => setError(e.message));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -24,6 +24,7 @@ export function useTimesheetData() {
     if (!selectedWorker) return;
     let cancelled = false;
     setLoading(true);
+    setError(null);
 
     const weekDayKeys = getWeekDays(weekStart).map((d) => d.fullDate);
 
@@ -32,7 +33,7 @@ export function useTimesheetData() {
       .then((shifts) => {
         if (!cancelled) fillFromShifts(shifts, weekDayKeys);
       })
-      .catch(console.error)
+      .catch((e: Error) => { if (!cancelled) setError(e.message); })
       .finally(() => { if (!cancelled) setLoading(false); });
 
     return () => { cancelled = true; };
