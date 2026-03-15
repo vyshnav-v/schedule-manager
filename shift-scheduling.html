@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shift Scheduling - Support Workers & Participants</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.1/lucide.min.js">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .border-l-3 { border-left-width: 3px; }
+    .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-track { background: #f1f5f9; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen">
+  
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-4">
+      <div class="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h1 class="text-xl font-bold text-slate-900">Shift Scheduling</h1>
+          <p class="text-sm text-slate-500">Manage support worker and participant shifts</p>
+        </div>
+        
+        <div class="flex items-center gap-3 flex-wrap">
+          <!-- View Mode Toggle -->
+          <div class="flex items-center bg-slate-100 rounded-lg p-1">
+            <button onclick="setViewMode('calendar')" id="btn-calendar" class="p-2 rounded-md transition-colors bg-white shadow text-blue-600">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            </button>
+            <button onclick="setViewMode('matrix')" id="btn-matrix" class="p-2 rounded-md transition-colors text-slate-500 hover:text-slate-700">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            </button>
+            <button onclick="setViewMode('list')" id="btn-list" class="p-2 rounded-md transition-colors text-slate-500 hover:text-slate-700">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+            </button>
+          </div>
+          
+          <!-- View By Toggle -->
+          <div id="viewby-toggle" class="flex items-center bg-slate-100 rounded-lg p-1">
+            <button onclick="setViewBy('worker')" id="btn-byworker" class="px-3 py-1.5 text-sm rounded-md transition-colors bg-white shadow text-slate-900 font-medium">
+              <svg class="w-4 h-4 inline mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              By Worker
+            </button>
+            <button onclick="setViewBy('participant')" id="btn-byparticipant" class="px-3 py-1.5 text-sm rounded-md transition-colors text-slate-500 hover:text-slate-700">
+              <svg class="w-4 h-4 inline mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+              By Participant
+            </button>
+          </div>
+          
+          <!-- Week Navigation -->
+          <div class="flex items-center gap-1 border border-slate-200 rounded-lg bg-white">
+            <button class="p-2 hover:bg-slate-100 transition-colors rounded-l-lg">
+              <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <span class="px-2 text-sm font-medium text-slate-700">13 - 19 Jan 2025</span>
+            <button class="p-2 hover:bg-slate-100 transition-colors rounded-r-lg">
+              <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
+          
+          <!-- Add Shift Button -->
+          <button onclick="openNewShiftModal()" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            New Shift
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Stats Bar -->
+  <div class="bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 py-3">
+      <div class="flex items-center gap-6 flex-wrap">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+            <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          </div>
+          <div>
+            <div class="text-lg font-semibold text-slate-900">5</div>
+            <div class="text-xs text-slate-500">Active Workers</div>
+          </div>
+        </div>
+        <div class="w-px h-10 bg-slate-200"></div>
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center">
+            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+          </div>
+          <div>
+            <div class="text-lg font-semibold text-slate-900">4</div>
+            <div class="text-xs text-slate-500">Participants</div>
+          </div>
+        </div>
+        <div class="w-px h-10 bg-slate-200"></div>
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+            <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          </div>
+          <div>
+            <div class="text-lg font-semibold text-slate-900">10</div>
+            <div class="text-xs text-slate-500">Scheduled Shifts</div>
+          </div>
+        </div>
+        <div class="w-px h-10 bg-slate-200"></div>
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+            <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          </div>
+          <div>
+            <div class="text-lg font-semibold text-slate-900">3</div>
+            <div class="text-xs text-slate-500">Pending Approval</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 py-6">
+    <!-- Calendar View -->
+    <div id="calendar-view" class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <div id="calendar-content" class="overflow-x-auto scrollbar-thin"></div>
+    </div>
+    
+    <!-- Matrix View -->
+    <div id="matrix-view" class="bg-white rounded-xl border border-slate-200 overflow-hidden hidden">
+      <div class="p-4 border-b border-slate-200 bg-slate-50">
+        <h3 class="font-semibold text-slate-900">Worker ↔ Participant Assignment Matrix</h3>
+        <p class="text-sm text-slate-500 mt-1">Visual representation of many-to-many relationships</p>
+      </div>
+      <div id="matrix-content" class="overflow-x-auto scrollbar-thin"></div>
+    </div>
+    
+    <!-- List View -->
+    <div id="list-view" class="bg-white rounded-xl border border-slate-200 overflow-hidden hidden">
+      <div class="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between flex-wrap gap-3">
+        <h3 class="font-semibold text-slate-900">All Scheduled Shifts</h3>
+        <div class="relative">
+          <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="search-shifts" placeholder="Search shifts..." class="pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+        </div>
+      </div>
+      <div id="list-content" class="divide-y divide-slate-200"></div>
+    </div>
+  </main>
+
+  <!-- Detail Panel -->
+  <div id="detail-panel" class="fixed inset-y-0 right-0 w-96 bg-white shadow-2xl border-l border-slate-200 z-50 overflow-y-auto transform translate-x-full transition-transform duration-300">
+    <div class="p-4 border-b border-slate-200 flex items-center justify-between sticky top-0 bg-white">
+      <h2 id="detail-title" class="font-semibold text-slate-900">Details</h2>
+      <button onclick="closeDetailPanel()" class="p-1 hover:bg-slate-100 rounded-lg">
+        <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+    <div id="detail-content"></div>
+  </div>
+
+  <!-- Shift Detail Modal -->
+  <div id="shift-detail-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4">
+      <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+        <h2 class="font-semibold text-slate-900">Shift Details</h2>
+        <button onclick="closeShiftDetailModal()" class="p-1 hover:bg-slate-100 rounded-lg">
+          <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div id="shift-detail-body" class="p-5 space-y-4"></div>
+      <div class="p-4 border-t border-slate-200 flex items-center justify-between gap-2">
+        <button onclick="closeShiftDetailModal()" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors text-sm">Close</button>
+        <button id="shift-detail-edit-btn" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          Edit Shift
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Shift Modal -->
+  <div id="new-shift-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg mx-4">
+      <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+        <h2 class="font-semibold text-slate-900">Create New Shift</h2>
+        <button onclick="closeNewShiftModal()" class="p-1 hover:bg-slate-100 rounded-lg">
+          <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      
+      <div class="p-4 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1.5">Support Worker</label>
+          <select id="modal-worker" class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            <option value="">Select a worker...</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1.5">Participant</label>
+          <select id="modal-participant" class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            <option value="">Select a participant...</option>
+          </select>
+          <p class="text-xs text-slate-500 mt-1 flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            Only showing participants linked to selected worker
+          </p>
+        </div>
+        
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1.5">Date</label>
+            <input type="date" id="modal-date" class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1.5">Start Time</label>
+            <div class="flex gap-1">
+              <select id="modal-start-hour" class="flex-1 p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"></select>
+              <span class="flex items-center text-slate-400 font-bold">:</span>
+              <select id="modal-start-min" class="flex-1 p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"></select>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1.5">End Time</label>
+            <div class="flex gap-1">
+              <select id="modal-end-hour" class="flex-1 p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"></select>
+              <span class="flex items-center text-slate-400 font-bold">:</span>
+              <select id="modal-end-min" class="flex-1 p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"></select>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1.5">Service Type</label>
+          <select id="modal-service-type" class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none">
+            <option value="">Select service type...</option>
+            <option value="Personal Care">Personal Care</option>
+            <option value="Community Access">Community Access</option>
+            <option value="Domestic">Domestic Assistance</option>
+            <option value="Transport">Transport</option>
+            <option value="Behaviour Support">Behaviour Support</option>
+            <option value="Medication">Medication Administration</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1.5">Notes</label>
+          <textarea id="modal-notes" rows="3" placeholder="Add any special instructions or notes..." class="w-full p-2.5 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none"></textarea>
+        </div>
+      </div>
+      
+      <div class="p-4 border-t border-slate-200 flex items-center justify-end gap-2">
+        <button onclick="closeNewShiftModal()" class="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">Cancel</button>
+        <button id="modal-create-btn" onclick="createShift()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Create Shift</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Data
+    const workers = [
+      { id: 1, name: 'Sarah Mitchell', avatar: 'SM', skills: ['Personal Care', 'Medication'], availability: 'Full-time', rating: 4.9, color: '#3B82F6' },
+      { id: 2, name: 'James Chen', avatar: 'JC', skills: ['Community Access', 'Transport'], availability: 'Part-time', rating: 4.7, color: '#10B981' },
+      { id: 3, name: 'Emma Wilson', avatar: 'EW', skills: ['Personal Care', 'Domestic'], availability: 'Full-time', rating: 4.8, color: '#8B5CF6' },
+      { id: 4, name: 'Michael Brown', avatar: 'MB', skills: ['Behaviour Support', 'Personal Care'], availability: 'Casual', rating: 4.6, color: '#F59E0B' },
+      { id: 5, name: 'Lisa Thompson', avatar: 'LT', skills: ['Nursing', 'Medication'], availability: 'Full-time', rating: 5.0, color: '#EC4899' },
+    ];
+
+    const participants = [
+      { id: 1, name: 'David Parker', avatar: 'DP', ndisNumber: '431234567', needs: ['Personal Care', 'Medication'], location: 'Parramatta', color: '#0EA5E9' },
+      { id: 2, name: 'Sophie Adams', avatar: 'SA', ndisNumber: '431234568', needs: ['Community Access', 'Transport'], location: 'Chatswood', color: '#14B8A6' },
+      { id: 3, name: 'Robert Lee', avatar: 'RL', ndisNumber: '431234569', needs: ['Personal Care', 'Domestic'], location: 'Blacktown', color: '#A855F7' },
+      { id: 4, name: 'Jennifer Wu', avatar: 'JW', ndisNumber: '431234570', needs: ['Behaviour Support'], location: 'Sydney CBD', color: '#F97316' },
+    ];
+
+    const shifts = [
+      { id: 1, workerId: 1, participantId: 1, date: '2025-01-13', startTime: '08:00', endTime: '12:00', status: 'confirmed', type: 'Personal Care' },
+      { id: 2, workerId: 1, participantId: 3, date: '2025-01-13', startTime: '13:00', endTime: '17:00', status: 'confirmed', type: 'Personal Care' },
+      { id: 3, workerId: 2, participantId: 2, date: '2025-01-13', startTime: '09:00', endTime: '15:00', status: 'pending', type: 'Community Access' },
+      { id: 4, workerId: 3, participantId: 1, date: '2025-01-14', startTime: '08:00', endTime: '12:00', status: 'confirmed', type: 'Personal Care' },
+      { id: 5, workerId: 3, participantId: 3, date: '2025-01-14', startTime: '14:00', endTime: '18:00', status: 'confirmed', type: 'Domestic' },
+      { id: 6, workerId: 4, participantId: 4, date: '2025-01-14', startTime: '10:00', endTime: '14:00', status: 'pending', type: 'Behaviour Support' },
+      { id: 7, workerId: 5, participantId: 1, date: '2025-01-15', startTime: '07:00', endTime: '11:00', status: 'confirmed', type: 'Medication' },
+      { id: 8, workerId: 2, participantId: 4, date: '2025-01-15', startTime: '13:00', endTime: '17:00', status: 'confirmed', type: 'Transport' },
+      { id: 9, workerId: 1, participantId: 2, date: '2025-01-16', startTime: '09:00', endTime: '13:00', status: 'pending', type: 'Personal Care' },
+      { id: 10, workerId: 4, participantId: 3, date: '2025-01-16', startTime: '14:00', endTime: '18:00', status: 'confirmed', type: 'Behaviour Support' },
+    ];
+
+    const workerParticipantLinks = [
+      { workerId: 1, participantId: 1, isPrimary: true },
+      { workerId: 1, participantId: 2, isPrimary: false },
+      { workerId: 1, participantId: 3, isPrimary: false },
+      { workerId: 2, participantId: 2, isPrimary: true },
+      { workerId: 2, participantId: 4, isPrimary: false },
+      { workerId: 3, participantId: 1, isPrimary: false },
+      { workerId: 3, participantId: 3, isPrimary: true },
+      { workerId: 4, participantId: 3, isPrimary: false },
+      { workerId: 4, participantId: 4, isPrimary: true },
+      { workerId: 5, participantId: 1, isPrimary: false },
+    ];
+
+    const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const weekDates = ['13 Jan', '14 Jan', '15 Jan', '16 Jan', '17 Jan', '18 Jan', '19 Jan'];
+    const fullDates = ['2025-01-13', '2025-01-14', '2025-01-15', '2025-01-16', '2025-01-17', '2025-01-18', '2025-01-19'];
+
+    let currentViewMode = 'calendar';
+    let currentViewBy = 'worker';
+
+    // Helper functions
+    const getWorkerById = (id) => workers.find(w => w.id === id);
+    const getParticipantById = (id) => participants.find(p => p.id === id);
+    
+    const getLinkedParticipants = (workerId) => {
+      return workerParticipantLinks
+        .filter(link => link.workerId === workerId)
+        .map(link => ({ ...getParticipantById(link.participantId), isPrimary: link.isPrimary }));
+    };
+
+    const getLinkedWorkers = (participantId) => {
+      return workerParticipantLinks
+        .filter(link => link.participantId === participantId)
+        .map(link => ({ ...getWorkerById(link.workerId), isPrimary: link.isPrimary }));
+    };
+
+    const createAvatar = (initials, color, size = 'md') => {
+      const sizes = { sm: 'w-6 h-6 text-xs', md: 'w-8 h-8 text-sm', lg: 'w-10 h-10 text-base' };
+      return `<div class="${sizes[size]} rounded-full flex items-center justify-center text-white font-medium" style="background-color: ${color}">${initials}</div>`;
+    };
+
+    const createStatusBadge = (status) => {
+      const styles = {
+        confirmed: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+        pending: 'bg-amber-100 text-amber-700 border-amber-200',
+        cancelled: 'bg-red-100 text-red-700 border-red-200'
+      };
+      return `<span class="px-2 py-0.5 text-xs font-medium rounded-full border ${styles[status]}">${status}</span>`;
+    };
+
+    // View Mode Functions
+    function setViewMode(mode) {
+      currentViewMode = mode;
+      
+      document.getElementById('calendar-view').classList.add('hidden');
+      document.getElementById('matrix-view').classList.add('hidden');
+      document.getElementById('list-view').classList.add('hidden');
+      
+      document.getElementById('btn-calendar').classList.remove('bg-white', 'shadow', 'text-blue-600');
+      document.getElementById('btn-matrix').classList.remove('bg-white', 'shadow', 'text-blue-600');
+      document.getElementById('btn-list').classList.remove('bg-white', 'shadow', 'text-blue-600');
+      
+      document.getElementById('btn-calendar').classList.add('text-slate-500');
+      document.getElementById('btn-matrix').classList.add('text-slate-500');
+      document.getElementById('btn-list').classList.add('text-slate-500');
+      
+      document.getElementById(`${mode}-view`).classList.remove('hidden');
+      document.getElementById(`btn-${mode}`).classList.add('bg-white', 'shadow', 'text-blue-600');
+      document.getElementById(`btn-${mode}`).classList.remove('text-slate-500');
+      
+      document.getElementById('viewby-toggle').style.display = mode === 'calendar' ? 'flex' : 'none';
+      
+      renderView();
+    }
+
+    function setViewBy(viewBy) {
+      currentViewBy = viewBy;
+      
+      document.getElementById('btn-byworker').classList.remove('bg-white', 'shadow', 'text-slate-900', 'font-medium');
+      document.getElementById('btn-byparticipant').classList.remove('bg-white', 'shadow', 'text-slate-900', 'font-medium');
+      
+      document.getElementById('btn-byworker').classList.add('text-slate-500');
+      document.getElementById('btn-byparticipant').classList.add('text-slate-500');
+      
+      document.getElementById(`btn-by${viewBy}`).classList.add('bg-white', 'shadow', 'text-slate-900', 'font-medium');
+      document.getElementById(`btn-by${viewBy}`).classList.remove('text-slate-500');
+      
+      renderCalendarView();
+    }
+
+    // Render Functions
+    function renderView() {
+      if (currentViewMode === 'calendar') renderCalendarView();
+      else if (currentViewMode === 'matrix') renderMatrixView();
+      else if (currentViewMode === 'list') renderListView();
+    }
+
+    function renderCalendarView() {
+      const entities = currentViewBy === 'worker' ? workers : participants;
+      const entityLabel = currentViewBy === 'worker' ? 'Support Worker' : 'Participant';
+      
+      let html = `
+        <div class="grid grid-cols-8 border-b border-slate-200" style="min-width: 900px;">
+          <div class="p-3 bg-slate-50 border-r border-slate-200 font-medium text-slate-600 text-sm">${entityLabel}</div>
+          ${weekDays.map((day, i) => `
+            <div class="p-3 bg-slate-50 text-center border-r border-slate-200 last:border-r-0">
+              <div class="font-medium text-slate-900">${day}</div>
+              <div class="text-xs text-slate-500">${weekDates[i]}</div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="divide-y divide-slate-200" style="min-width: 900px;">
+      `;
+      
+      entities.forEach(entity => {
+        const linkedCount = currentViewBy === 'worker' 
+          ? getLinkedParticipants(entity.id).length 
+          : getLinkedWorkers(entity.id).length;
+        const linkedLabel = currentViewBy === 'worker' ? 'participants' : 'workers';
+        
+        html += `
+          <div class="grid grid-cols-8">
+            <div class="p-3 border-r border-slate-200 bg-slate-50/50 cursor-pointer hover:bg-slate-100 transition-colors" onclick="openDetailPanel(${entity.id}, '${currentViewBy}')">
+              <div class="flex items-center gap-2">
+                ${createAvatar(entity.avatar, entity.color)}
+                <div class="min-w-0">
+                  <div class="font-medium text-slate-900 text-sm truncate">${entity.name}</div>
+                  <div class="text-xs text-slate-500">${linkedCount} ${linkedLabel}</div>
+                </div>
+              </div>
+            </div>
+        `;
+        
+        fullDates.forEach(date => {
+          const dayShifts = currentViewBy === 'worker'
+            ? shifts.filter(s => s.workerId === entity.id && s.date === date)
+            : shifts.filter(s => s.participantId === entity.id && s.date === date);
+          
+          html += `<div class="p-1.5 border-r border-slate-200 last:border-r-0 min-h-[80px] hover:bg-slate-50 transition-colors cursor-pointer group relative" onclick="openNewShiftModal(${entity.id}, '${date}', '${currentViewBy}')">
+            <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center">
+                <svg class="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              </div>
+            </div>`;
+          
+          dayShifts.forEach(shift => {
+            const relatedEntity = currentViewBy === 'worker' 
+              ? getParticipantById(shift.participantId)
+              : getWorkerById(shift.workerId);
+            
+            html += `
+              <div class="mb-1 p-1.5 rounded-lg text-xs border-l-3 cursor-pointer hover:brightness-95 transition-all" style="background-color: ${relatedEntity.color}15; border-left-color: ${relatedEntity.color};" onclick="event.stopPropagation(); openShiftDetail(${shift.id})">
+                <div class="font-medium text-slate-800 truncate">${relatedEntity.name}</div>
+                <div class="text-slate-500 flex items-center gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                  ${shift.startTime}-${shift.endTime}
+                </div>
+                ${createStatusBadge(shift.status)}
+              </div>
+            `;
+          });
+          
+          html += `</div>`;
+        });
+        
+        html += `</div>`;
+      });
+      
+      html += `</div>`;
+      document.getElementById('calendar-content').innerHTML = html;
+    }
+
+    function renderMatrixView() {
+      let html = `
+        <table class="w-full" style="min-width: 800px;">
+          <thead>
+            <tr class="bg-slate-50">
+              <th class="p-3 text-left font-medium text-slate-600 border-b border-r border-slate-200 sticky left-0 bg-slate-50 z-10">Support Workers</th>
+              ${participants.map(p => `
+                <th class="p-3 border-b border-r border-slate-200 last:border-r-0 min-w-[140px]">
+                  <div class="flex flex-col items-center gap-1">
+                    ${createAvatar(p.avatar, p.color)}
+                    <span class="text-sm font-medium text-slate-900">${p.name}</span>
+                    <span class="text-xs text-slate-500">${p.location}</span>
+                  </div>
+                </th>
+              `).join('')}
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      
+      workers.forEach(worker => {
+        html += `
+          <tr class="hover:bg-slate-50">
+            <td class="p-3 border-b border-r border-slate-200 sticky left-0 bg-white z-10">
+              <div class="flex items-center gap-2">
+                ${createAvatar(worker.avatar, worker.color)}
+                <div>
+                  <div class="font-medium text-slate-900">${worker.name}</div>
+                  <div class="text-xs text-slate-500">${worker.availability}</div>
+                </div>
+              </div>
+            </td>
+        `;
+        
+        participants.forEach(participant => {
+          const link = workerParticipantLinks.find(l => l.workerId === worker.id && l.participantId === participant.id);
+          const shiftCount = shifts.filter(s => s.workerId === worker.id && s.participantId === participant.id).length;
+          
+          if (link) {
+            html += `
+              <td class="p-3 border-b border-r border-slate-200 last:border-r-0 text-center">
+                <div class="flex flex-col items-center gap-1">
+                  <div class="w-8 h-8 rounded-full flex items-center justify-center ${link.isPrimary ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'}">
+                    ${link.isPrimary 
+                      ? '<svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>'
+                      : '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+                    }
+                  </div>
+                  <span class="text-xs text-slate-500">${shiftCount} shifts</span>
+                  ${link.isPrimary ? '<span class="text-xs text-emerald-600 font-medium">Primary</span>' : ''}
+                </div>
+              </td>
+            `;
+          } else {
+            html += `
+              <td class="p-3 border-b border-r border-slate-200 last:border-r-0 text-center">
+                <button class="w-8 h-8 rounded-full border-2 border-dashed border-slate-300 hover:border-blue-400 hover:bg-blue-50 transition-colors mx-auto flex items-center justify-center">
+                  <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                </button>
+              </td>
+            `;
+          }
+        });
+        
+        html += `</tr>`;
+      });
+      
+      html += `</tbody></table>`;
+      document.getElementById('matrix-content').innerHTML = html;
+    }
+
+    function renderListView() {
+      let html = '';
+      
+      shifts.forEach(shift => {
+        const worker = getWorkerById(shift.workerId);
+        const participant = getParticipantById(shift.participantId);
+        
+        html += `
+          <div class="p-4 hover:bg-slate-50 transition-colors">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+              <div class="flex items-center gap-4 flex-wrap">
+                <div class="flex items-center gap-2 min-w-[160px]">
+                  ${createAvatar(worker.avatar, worker.color)}
+                  <div>
+                    <div class="font-medium text-slate-900 text-sm">${worker.name}</div>
+                    <div class="text-xs text-slate-500">Support Worker</div>
+                  </div>
+                </div>
+                
+                <div class="text-slate-300 px-2">→</div>
+                
+                <div class="flex items-center gap-2 min-w-[160px]">
+                  ${createAvatar(participant.avatar, participant.color)}
+                  <div>
+                    <div class="font-medium text-slate-900 text-sm">${participant.name}</div>
+                    <div class="text-xs text-slate-500">${participant.location}</div>
+                  </div>
+                </div>
+                
+                <div class="flex items-center gap-4 ml-4 flex-wrap">
+                  <div class="flex items-center gap-1.5 text-sm text-slate-600">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                    ${shift.date}
+                  </div>
+                  <div class="flex items-center gap-1.5 text-sm text-slate-600">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    ${shift.startTime} - ${shift.endTime}
+                  </div>
+                  <span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-full">${shift.type}</span>
+                </div>
+              </div>
+              
+              <div class="flex items-center gap-3">
+                ${createStatusBadge(shift.status)}
+                <button class="p-1.5 hover:bg-slate-200 rounded-lg transition-colors">
+                  <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      
+      document.getElementById('list-content').innerHTML = html;
+    }
+
+    // Detail Panel
+    function openDetailPanel(entityId, type) {
+      const entity = type === 'worker' ? getWorkerById(entityId) : getParticipantById(entityId);
+      const linkedEntities = type === 'worker' ? getLinkedParticipants(entityId) : getLinkedWorkers(entityId);
+      const entityShifts = shifts.filter(s => type === 'worker' ? s.workerId === entityId : s.participantId === entityId);
+      
+      document.getElementById('detail-title').textContent = type === 'worker' ? 'Worker Details' : 'Participant Details';
+      
+      let html = `
+        <div class="p-4 border-b border-slate-200">
+          <div class="flex items-center gap-3">
+            ${createAvatar(entity.avatar, entity.color, 'lg')}
+            <div>
+              <h3 class="font-semibold text-slate-900">${entity.name}</h3>
+              ${type === 'worker' 
+                ? `<div class="flex items-center gap-2 text-sm text-slate-500">
+                    <svg class="w-4 h-4 text-amber-400 fill-amber-400" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    ${entity.rating} rating • ${entity.availability}
+                  </div>`
+                : `<div class="flex items-center gap-1 text-sm text-slate-500">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    ${entity.location}
+                  </div>`
+              }
+            </div>
+          </div>
+          
+          <div class="mt-4">
+            <div class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">${type === 'worker' ? 'Skills' : 'Support Needs'}</div>
+            <div class="flex flex-wrap gap-1.5">
+              ${(type === 'worker' ? entity.skills : entity.needs).map(item => 
+                `<span class="px-2 py-1 bg-slate-100 text-slate-600 text-xs rounded-full">${item}</span>`
+              ).join('')}
+            </div>
+          </div>
+        </div>
+        
+        <div class="p-4 border-b border-slate-200">
+          <div class="flex items-center justify-between mb-3">
+            <div class="text-xs font-medium text-slate-500 uppercase tracking-wide">Linked ${type === 'worker' ? 'Participants' : 'Workers'} (${linkedEntities.length})</div>
+            <button class="text-xs text-blue-600 hover:text-blue-700 font-medium">Manage</button>
+          </div>
+          <div class="space-y-2">
+            ${linkedEntities.map(linked => `
+              <div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
+                <div class="flex items-center gap-2">
+                  ${createAvatar(linked.avatar, linked.color, 'sm')}
+                  <span class="text-sm font-medium text-slate-900">${linked.name}</span>
+                </div>
+                ${linked.isPrimary 
+                  ? `<span class="text-xs text-emerald-600 font-medium flex items-center gap-1">
+                      <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                      Primary
+                    </span>`
+                  : ''
+                }
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        
+        <div class="p-4">
+          <div class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-3">Upcoming Shifts (${entityShifts.length})</div>
+          <div class="space-y-2">
+            ${entityShifts.slice(0, 5).map(shift => {
+              const related = type === 'worker' ? getParticipantById(shift.participantId) : getWorkerById(shift.workerId);
+              return `
+                <div class="p-3 border border-slate-200 rounded-lg">
+                  <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                      ${createAvatar(related.avatar, related.color, 'sm')}
+                      <span class="text-sm font-medium text-slate-900">${related.name}</span>
+                    </div>
+                    ${createStatusBadge(shift.status)}
+                  </div>
+                  <div class="flex items-center gap-3 text-xs text-slate-500">
+                    <span class="flex items-center gap-1">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                      ${shift.date}
+                    </span>
+                    <span class="flex items-center gap-1">
+                      <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                      ${shift.startTime}-${shift.endTime}
+                    </span>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('detail-content').innerHTML = html;
+      document.getElementById('detail-panel').classList.remove('translate-x-full');
+    }
+
+    function closeDetailPanel() {
+      document.getElementById('detail-panel').classList.add('translate-x-full');
+    }
+
+    // Modal Functions
+    function populateTimeDropdowns() {
+      const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+      const minutes = ['00','05','10','15','20','25','30','35','40','45','50','55'];
+      const hourOpts = hours.map(h => `<option value="${h}">${h}</option>`).join('');
+      const minOpts  = minutes.map(m => `<option value="${m}">${m}</option>`).join('');
+      ['modal-start-hour','modal-end-hour'].forEach(id => document.getElementById(id).innerHTML = hourOpts);
+      ['modal-start-min','modal-end-min'].forEach(id => document.getElementById(id).innerHTML = minOpts);
+      // Sensible defaults: 08:00 – 16:00
+      document.getElementById('modal-start-hour').value = '08';
+      document.getElementById('modal-start-min').value  = '00';
+      document.getElementById('modal-end-hour').value   = '16';
+      document.getElementById('modal-end-min').value    = '00';
+    }
+
+    function openNewShiftModal(entityId, date, viewBy) {
+      const workerSelect = document.getElementById('modal-worker');
+      const participantSelect = document.getElementById('modal-participant');
+      const dateInput = document.getElementById('modal-date');
+      const modalTitle = document.querySelector('#new-shift-modal h2');
+
+      populateTimeDropdowns();
+      
+      workerSelect.innerHTML = '<option value="">Select a worker...</option>' + 
+        workers.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+      
+      participantSelect.innerHTML = '<option value="">Select a participant...</option>' + 
+        participants.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+      // Reset fields
+      dateInput.value = '';
+      workerSelect.value = '';
+      participantSelect.value = '';
+      modalTitle.textContent = 'Create New Shift';
+      document.getElementById('modal-service-type').value = '';
+      document.getElementById('modal-notes').value = '';
+
+      if (date) dateInput.value = date;
+
+      if (entityId && viewBy === 'worker') {
+        workerSelect.value = entityId;
+        const worker = getWorkerById(entityId);
+        if (worker) {
+          modalTitle.textContent = `New Shift — ${worker.name}`;
+          const linked = getLinkedParticipants(entityId);
+          participantSelect.innerHTML = '<option value="">Select a participant...</option>' + 
+            linked.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        }
+      } else if (entityId && viewBy === 'participant') {
+        participantSelect.value = entityId;
+        const participant = getParticipantById(entityId);
+        if (participant) modalTitle.textContent = `New Shift — ${participant.name}`;
+      }
+      
+      document.getElementById('new-shift-modal').classList.remove('hidden');
+    }
+
+    function createShift() {
+      const workerId   = parseInt(document.getElementById('modal-worker').value);
+      const participantId = parseInt(document.getElementById('modal-participant').value);
+      const date       = document.getElementById('modal-date').value;
+      const startHour  = document.getElementById('modal-start-hour').value;
+      const startMin   = document.getElementById('modal-start-min').value;
+      const endHour    = document.getElementById('modal-end-hour').value;
+      const endMin     = document.getElementById('modal-end-min').value;
+      const type       = document.getElementById('modal-service-type').value;
+      const notes      = document.getElementById('modal-notes').value.trim();
+
+      if (!workerId || !participantId || !date || !type) {
+        ['modal-worker','modal-participant','modal-date','modal-service-type'].forEach(id => {
+          const el = document.getElementById(id);
+          if (!el.value) {
+            el.classList.add('border-red-400','ring-1','ring-red-300');
+            el.addEventListener('change', () => el.classList.remove('border-red-400','ring-1','ring-red-300'), { once: true });
+          }
+        });
+        return;
+      }
+
+      shifts.push({
+        id: shifts.length + 1,
+        workerId, participantId, date,
+        startTime: `${startHour}:${startMin}`,
+        endTime: `${endHour}:${endMin}`,
+        status: 'pending',
+        type, notes,
+      });
+
+      closeNewShiftModal();
+      renderView();
+    }
+
+    function openShiftDetail(shiftId) {
+      const shift = shifts.find(s => s.id === shiftId);
+      if (!shift) return;
+      const worker = getWorkerById(shift.workerId);
+      const participant = getParticipantById(shift.participantId);
+
+      const dateFormatted = new Date(shift.date + 'T00:00:00').toLocaleDateString('en-AU', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+      document.getElementById('shift-detail-body').innerHTML = `
+        <div class="flex items-center gap-3 pb-4 border-b border-slate-100">
+          <div class="flex items-center gap-2">
+            ${createAvatar(worker.avatar, worker.color)}
+            <div>
+              <div class="text-xs text-slate-500">Worker</div>
+              <div class="font-semibold text-slate-900 text-sm">${worker.name}</div>
+            </div>
+          </div>
+          <svg class="w-5 h-5 text-slate-300 mx-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          <div class="flex items-center gap-2">
+            ${createAvatar(participant.avatar, participant.color)}
+            <div>
+              <div class="text-xs text-slate-500">Participant</div>
+              <div class="font-semibold text-slate-900 text-sm">${participant.name}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="bg-slate-50 rounded-lg p-3">
+            <div class="text-xs text-slate-500 mb-1">Date</div>
+            <div class="text-sm font-medium text-slate-800">${dateFormatted}</div>
+          </div>
+          <div class="bg-slate-50 rounded-lg p-3">
+            <div class="text-xs text-slate-500 mb-1">Time</div>
+            <div class="text-sm font-medium text-slate-800">${shift.startTime} – ${shift.endTime}</div>
+          </div>
+          <div class="bg-slate-50 rounded-lg p-3">
+            <div class="text-xs text-slate-500 mb-1">Service Type</div>
+            <div class="text-sm font-medium text-slate-800">${shift.type || '—'}</div>
+          </div>
+          <div class="bg-slate-50 rounded-lg p-3">
+            <div class="text-xs text-slate-500 mb-1">Status</div>
+            <div class="mt-0.5">${createStatusBadge(shift.status)}</div>
+          </div>
+        </div>
+
+        <div class="bg-slate-50 rounded-lg p-3">
+          <div class="text-xs text-slate-500 mb-1">Notes</div>
+          <div class="text-sm text-slate-800">${shift.notes ? shift.notes : '<span class="text-slate-400 italic">No notes added</span>'}</div>
+        </div>
+      `;
+
+      document.getElementById('shift-detail-edit-btn').onclick = () => {
+        closeShiftDetailModal();
+        openEditShiftModal(shiftId);
+      };
+
+      document.getElementById('shift-detail-modal').classList.remove('hidden');
+    }
+
+    function closeShiftDetailModal() {
+      document.getElementById('shift-detail-modal').classList.add('hidden');
+    }
+
+    function openEditShiftModal(shiftId) {
+      const shift = shifts.find(s => s.id === shiftId);
+      if (!shift) return;
+
+      const workerSelect = document.getElementById('modal-worker');
+      const participantSelect = document.getElementById('modal-participant');
+      const dateInput = document.getElementById('modal-date');
+      const modalTitle = document.querySelector('#new-shift-modal h2');
+      const createBtn = document.getElementById('modal-create-btn');
+
+      populateTimeDropdowns();
+
+      workerSelect.innerHTML = '<option value="">Select a worker...</option>' +
+        workers.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+      participantSelect.innerHTML = '<option value="">Select a participant...</option>' +
+        participants.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+
+      // Pre-fill all fields
+      modalTitle.textContent = 'Edit Shift';
+      dateInput.value = shift.date;
+      workerSelect.value = shift.workerId;
+      participantSelect.value = shift.participantId;
+      document.getElementById('modal-start-hour').value = shift.startTime.split(':')[0];
+      document.getElementById('modal-start-min').value  = shift.startTime.split(':')[1];
+      document.getElementById('modal-end-hour').value   = shift.endTime.split(':')[0];
+      document.getElementById('modal-end-min').value    = shift.endTime.split(':')[1];
+      document.getElementById('modal-service-type').value = shift.type || '';
+      document.getElementById('modal-notes').value = shift.notes || '';
+
+      // Swap button to Save
+      createBtn.textContent = 'Save Changes';
+      createBtn.onclick = () => saveShift(shiftId);
+
+      document.getElementById('new-shift-modal').classList.remove('hidden');
+    }
+
+    function saveShift(shiftId) {
+      const workerId      = parseInt(document.getElementById('modal-worker').value);
+      const participantId = parseInt(document.getElementById('modal-participant').value);
+      const date          = document.getElementById('modal-date').value;
+      const startHour     = document.getElementById('modal-start-hour').value;
+      const startMin      = document.getElementById('modal-start-min').value;
+      const endHour       = document.getElementById('modal-end-hour').value;
+      const endMin        = document.getElementById('modal-end-min').value;
+      const type          = document.getElementById('modal-service-type').value;
+      const notes         = document.getElementById('modal-notes').value.trim();
+
+      if (!workerId || !participantId || !date || !type) {
+        ['modal-worker','modal-participant','modal-date','modal-service-type'].forEach(id => {
+          const el = document.getElementById(id);
+          if (!el.value) {
+            el.classList.add('border-red-400','ring-1','ring-red-300');
+            el.addEventListener('change', () => el.classList.remove('border-red-400','ring-1','ring-red-300'), { once: true });
+          }
+        });
+        return;
+      }
+
+      const idx = shifts.findIndex(s => s.id === shiftId);
+      if (idx !== -1) {
+        shifts[idx] = { ...shifts[idx], workerId, participantId, date, startTime: `${startHour}:${startMin}`, endTime: `${endHour}:${endMin}`, type, notes };
+      }
+
+      // Reset button back to Create Shift mode
+      const createBtn = document.getElementById('modal-create-btn');
+      if (createBtn) { createBtn.textContent = 'Create Shift'; createBtn.onclick = createShift; }
+
+      closeNewShiftModal();
+      renderView();
+    }
+
+    function closeNewShiftModal() {
+      document.getElementById('new-shift-modal').classList.add('hidden');
+      // Reset title and button in case we were in edit mode
+      document.querySelector('#new-shift-modal h2').textContent = 'Create New Shift';
+      const btn = document.getElementById('modal-create-btn');
+      if (btn) { btn.textContent = 'Create Shift'; btn.onclick = createShift; }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', function() {
+      renderView();
+    });
+  </script>
+</body>
+</html>

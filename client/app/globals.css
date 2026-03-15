@@ -1,0 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+/* Ensure Tailwind v4 scans all source files */
+@source "../src/**/*.{ts,tsx}";
+@source "../app/**/*.{ts,tsx}";
+
+:root {
+  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  font-family: var(--font-inter);
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+/* Thin scrollbar – matches shift-scheduling.html */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Custom utilities matching shift-scheduling.html */
+@utility border-l-3 {
+  border-left-width: 3px;
+}
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+}

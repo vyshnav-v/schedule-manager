@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR Nexus - Timesheet</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f1f5f9;
+            min-height: 100vh;
+            color: #1e293b;
+            font-size: 13px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .logo h1 { color: white; font-size: 18px; font-weight: 700; }
+        .logo span { color: #94a3b8; font-size: 11px; display: block; }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            font-size: 13px;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 16px; }
+
+        .config-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            border: 1px solid #e2e8f0;
+        }
+
+        .config-grid {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .config-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .config-item label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        .config-item select {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            font-size: 12px;
+            font-weight: 500;
+            color: #1e293b;
+            background: white;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .config-item select:focus { border-color: #0ea5e9; }
+
+        .timesheet-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+
+        .timesheet-header {
+            padding: 12px 18px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f8fafc;
+        }
+
+        .timesheet-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .timesheet-title h2 { font-size: 14px; font-weight: 600; color: #1e293b; }
+
+        .status-badge {
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge.draft { background: #f3f4f6; color: #6b7280; }
+
+        .week-nav {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .week-nav button {
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #475569;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .week-nav button:hover { background: #f8fafc; }
+
+        .week-nav .week-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #1e293b;
+            min-width: 140px;
+            text-align: center;
+        }
+
+        .timesheet-table-wrapper { overflow-x: auto; }
+
+        .timesheet-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+
+        .timesheet-table th,
+        .timesheet-table td {
+            border: 1px solid #e5e7eb;
+            padding: 0;
+            text-align: center;
+            vertical-align: middle;
+        }
+
+        .timesheet-table thead th {
+            background: #f1f5f9;
+            font-weight: 600;
+            color: #475569;
+            padding: 8px 4px;
+            font-size: 10px;
+        }
+
+        .timesheet-table thead th.day-header { min-width: 85px; }
+
+        .timesheet-table thead th.row-label {
+            min-width: 110px;
+            text-align: left;
+            padding-left: 10px;
+            background: #e2e8f0;
+        }
+
+        .timesheet-table thead th.total-col {
+            min-width: 50px;
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .day-name {
+            font-size: 9px;
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .day-date {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-top: 1px;
+        }
+
+        .holiday-badge {
+            display: inline-block;
+            background: #fee2e2;
+            color: #dc2626;
+            font-size: 7px;
+            font-weight: 700;
+            padding: 1px 4px;
+            border-radius: 3px;
+            margin-top: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .day-header.weekend { background: #fef9c3 !important; }
+        .day-header.today { background: #dcfce7 !important; }
+        .day-header.today .day-date { color: #16a34a; }
+        .day-header.holiday { background: #fee2e2 !important; }
+        .day-header.holiday .day-date { color: #dc2626; }
+
+        .timesheet-table tbody td.row-label {
+            text-align: left;
+            padding: 6px 8px;
+            background: #f8fafc;
+            font-weight: 500;
+            color: #334155;
+        }
+
+        .row-label-content {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .row-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .row-icon svg { width: 11px; height: 11px; }
+
+        .row-icon.work { background: #dbeafe; color: #2563eb; }
+        .row-icon.leave { background: #ede9fe; color: #7c3aed; }
+        .row-icon.travel { background: #fef3c7; color: #d97706; }
+        .row-icon.training { background: #d1fae5; color: #059669; }
+        .row-icon.project { background: #fce7f3; color: #db2777; }
+        .row-icon.ooo { background: #fed7aa; color: #ea580c; }
+
+        .row-label-text { font-size: 11px; font-weight: 600; color: #334155; }
+
+        .timesheet-table tbody td.input-cell {
+            padding: 2px;
+            background: white;
+            vertical-align: top;
+        }
+
+        .timesheet-table tbody td.input-cell:hover { background: #f0f9ff; }
+        .timesheet-table tbody td.input-cell.weekend { background: #fffbeb; }
+        .timesheet-table tbody td.input-cell.has-value { background: #f0fdf4; }
+        .timesheet-table tbody td.input-cell.holiday { background: #fef2f2; }
+
+        .hours-input {
+            width: 100%;
+            padding: 8px 2px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            font-family: inherit;
+            text-align: center;
+            background: transparent;
+            outline: none;
+            color: #1e293b;
+        }
+
+        .hours-input:focus { background: #eff6ff; }
+        .hours-input::placeholder { color: #d1d5db; font-weight: 400; }
+        .hours-input:not(:placeholder-shown) { color: #0284c7; }
+
+        .time-entry {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: 3px 2px;
+        }
+
+        .time-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+        }
+
+        .time-lbl {
+            font-size: 8px;
+            font-weight: 700;
+            color: #9ca3af;
+            text-transform: uppercase;
+            width: 16px;
+            text-align: right;
+        }
+
+        .time-input {
+            width: 38px;
+            padding: 3px 2px;
+            border: 1px solid #e5e7eb;
+            border-radius: 3px;
+            font-size: 11px;
+            font-family: inherit;
+            text-align: center;
+            background: white;
+            outline: none;
+            color: #374151;
+        }
+
+        .time-input:focus { border-color: #0ea5e9; background: #eff6ff; }
+        .time-input::placeholder { color: #d1d5db; }
+
+        .ampm-select {
+            padding: 3px 2px;
+            border: 1px solid #e5e7eb;
+            border-radius: 3px;
+            font-size: 9px;
+            font-family: inherit;
+            background: white;
+            outline: none;
+            cursor: pointer;
+            color: #374151;
+            width: 32px;
+        }
+
+        .ampm-select:focus { border-color: #0ea5e9; background: #eff6ff; }
+
+        .calc-hrs {
+            text-align: center;
+            margin-top: 2px;
+            font-size: 9px;
+            font-weight: 700;
+            color: #0369a1;
+            background: #e0f2fe;
+            border-radius: 2px;
+            padding: 1px 3px;
+        }
+
+        .calc-hrs.empty { background: transparent; color: #d1d5db; }
+
+        .proj-sel {
+            width: 100%;
+            padding: 2px 1px;
+            border: 1px solid #e5e7eb;
+            border-radius: 2px;
+            font-size: 8px;
+            font-family: inherit;
+            background: #fdf4ff;
+            outline: none;
+            cursor: pointer;
+            color: #7e22ce;
+            margin-bottom: 2px;
+        }
+
+        .proj-sel:focus { border-color: #a855f7; }
+
+        .timesheet-table tbody td.total-cell {
+            background: #eff6ff;
+            font-weight: 700;
+            color: #1e40af;
+            font-size: 12px;
+            padding: 6px 4px;
+        }
+
+        .timesheet-table tfoot td {
+            background: #1e3a5f;
+            color: white;
+            font-weight: 600;
+            padding: 8px 4px;
+            font-size: 11px;
+        }
+
+        .timesheet-table tfoot td.row-label {
+            background: #1e3a5f;
+            color: white;
+            text-align: right;
+            padding-right: 10px;
+        }
+
+        .timesheet-table tfoot td.grand-total {
+            background: #0ea5e9;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .timesheet-actions {
+            padding: 12px 18px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f8fafc;
+        }
+
+        .action-group { display: flex; gap: 8px; }
+
+        .btn {
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-outline { border: 1px solid #e2e8f0; background: white; color: #475569; }
+        .btn-outline:hover { background: #f8fafc; }
+
+        .btn-primary {
+            border: none;
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: white;
+            box-shadow: 0 2px 6px rgba(14, 165, 233, 0.25);
+        }
+
+        .summary-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .summary-item { display: flex; align-items: center; gap: 4px; }
+        .summary-item strong { color: #1e293b; font-weight: 700; }
+
+        .add-row-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 5px 10px;
+            border: 1px dashed #cbd5e1;
+            border-radius: 4px;
+            background: transparent;
+            color: #64748b;
+            font-size: 10px;
+            font-weight: 500;
+            cursor: pointer;
+            margin: 8px 10px;
+        }
+
+        .add-row-btn:hover { border-color: #0ea5e9; color: #0ea5e9; background: #f0f9ff; }
+
+        .employee-select-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 10px 5px 6px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.15s;
+        }
+        .employee-select-wrapper:focus-within { border-color: #0ea5e9; box-shadow: 0 0 0 2px rgba(14,165,233,0.12); }
+
+        .employee-avatar-sm {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .employee-select-wrapper select {
+            border: none;
+            outline: none;
+            font-size: 12px;
+            font-weight: 600;
+            color: #1e293b;
+            background: transparent;
+            cursor: pointer;
+            padding: 0;
+            min-width: 140px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </div>
+            <div>
+                <h1>HR Nexus</h1>
+                <span>Timesheet Management</span>
+            </div>
+        </div>
+        <div class="user-info">
+            <span>Ditty Kumar</span>
+            <div class="user-avatar">DK</div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="config-panel">
+            <div class="config-grid">
+                <div class="config-item">
+                    <label>Employee:</label>
+                    <div class="employee-select-wrapper">
+                        <div class="employee-avatar-sm" id="empAvatar" style="background: linear-gradient(135deg,#10b981,#059669)">DK</div>
+                        <select id="employeeSelect" onchange="updateEmployee()">
+                            <option value="DK" data-name="Ditty Kumar"     data-color="#10b981,#059669">Ditty Kumar</option>
+                            <option value="SM" data-name="Sarah Mitchell"  data-color="#3b82f6,#2563eb">Sarah Mitchell</option>
+                            <option value="JC" data-name="James Chen"      data-color="#8b5cf6,#7c3aed">James Chen</option>
+                            <option value="EW" data-name="Emma Wilson"     data-color="#f59e0b,#d97706">Emma Wilson</option>
+                            <option value="MB" data-name="Michael Brown"   data-color="#ef4444,#dc2626">Michael Brown</option>
+                            <option value="LT" data-name="Lisa Thompson"   data-color="#ec4899,#db2777">Lisa Thompson</option>
+                            <option value="RN" data-name="Rachel Nguyen"   data-color="#06b6d4,#0891b2">Rachel Nguyen</option>
+                            <option value="TP" data-name="Tom Patterson"   data-color="#64748b,#475569">Tom Patterson</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="config-item">
+                    <label>Pay Period:</label>
+                    <select id="payPeriod">
+                        <option value="weekly">Weekly</option>
+                        <option value="fortnightly" selected>Fortnightly</option>
+                        <option value="monthly">Monthly</option>
+                    </select>
+                </div>
+                <div class="config-item">
+                    <label>Work Type:</label>
+                    <select id="workType" onchange="updateConfig()">
+                        <option value="shift" selected>Shift Work</option>
+                        <option value="office">Office Work</option>
+                    </select>
+                </div>
+                <div class="config-item">
+                    <label>Timesheet Type:</label>
+                    <select id="timesheetType" onchange="updateConfig()">
+                        <option value="general" selected>General</option>
+                        <option value="project">Project Based</option>
+                    </select>
+                </div>
+                <div class="config-item">
+                    <label>Entry Type:</label>
+                    <select id="entryType" onchange="updateConfig()">
+                        <option value="hours" selected>Only Hours</option>
+                        <option value="startend">Start / End Time</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="timesheet-card">
+            <div class="timesheet-header">
+                <div class="timesheet-title">
+                    <h2>Weekly Timesheet</h2>
+                    <span class="status-badge draft">Draft</span>
+                </div>
+                <div class="week-nav">
+                    <button onclick="changeWeek(-1)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        Prev
+                    </button>
+                    <span class="week-label" id="weekLabel">26 Jan - 1 Feb 2026</span>
+                    <button onclick="changeWeek(1)">
+                        Next
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="timesheet-table-wrapper">
+                <table class="timesheet-table" id="timesheetTable"></table>
+            </div>
+
+            <button class="add-row-btn" onclick="addNewRow()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                Add Row
+            </button>
+
+            <div class="timesheet-actions">
+                <div class="summary-info">
+                    <div class="summary-item"><span>Total:</span><strong id="totalHours">38.5h</strong></div>
+                    <div class="summary-item"><span>Overtime:</span><strong id="overtimeHours">0.0h</strong></div>
+                    <div class="summary-item"><span>Leave:</span><strong id="leaveHours">8.0h</strong></div>
+                </div>
+                <div class="action-group">
+                    <button class="btn btn-outline">Export</button>
+                    <button class="btn btn-outline">Save</button>
+                    <button class="btn btn-primary">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let config = { workType: 'shift', timesheetType: 'general', entryType: 'hours', weekOffset: 0 };
+
+        const projects = [
+            { id: '', label: '-' },
+            { id: 'client', label: 'Client' },
+            { id: 'inhome', label: 'In-Home' },
+            { id: 'respite', label: 'Respite' },
+            { id: 'community', label: 'Community' },
+            { id: 'admin', label: 'Admin' },
+        ];
+
+        // Australian Public Holidays (sample - would come from backend)
+        const publicHolidays = {
+            '2026-01-26': 'Australia Day',
+            '2026-01-27': 'Australia Day (Observed)',
+            '2026-04-03': 'Good Friday',
+            '2026-04-06': 'Easter Monday',
+            '2026-04-25': 'ANZAC Day',
+            '2026-06-08': 'Queens Birthday',
+            '2026-12-25': 'Christmas Day',
+            '2026-12-26': 'Boxing Day',
+        };
+
+        let entryTypes = [
+            { id: 'regular', label: 'Regular Hours', icon: 'work' },
+            { id: 'leave', label: 'Leave', icon: 'leave' },
+            { id: 'ooo', label: 'Out Of Office', icon: 'ooo' },
+            { id: 'travel', label: 'Travel', icon: 'travel' },
+            { id: 'training', label: 'Training', icon: 'training' },
+        ];
+
+        const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+        let data = {};
+
+        function initData() {
+            [...entryTypes, { id: 'project' }].forEach(type => {
+                data[type.id] = {};
+                days.forEach(d => {
+                    data[type.id][d] = { hours: 0, startTime: '', startAP: 'AM', endTime: '', endAP: 'PM', proj: '' };
+                });
+            });
+            // Sample data
+            data.regular.mon = { hours: 7.5, startTime: '9:00', startAP: 'AM', endTime: '5:00', endAP: 'PM', proj: '' };
+            data.regular.tue = { hours: 7.5, startTime: '9:00', startAP: 'AM', endTime: '5:00', endAP: 'PM', proj: '' };
+            data.regular.thu = { hours: 7.5, startTime: '9:00', startAP: 'AM', endTime: '5:00', endAP: 'PM', proj: '' };
+            data.regular.fri = { hours: 8, startTime: '8:00', startAP: 'AM', endTime: '4:30', endAP: 'PM', proj: '' };
+            data.regular.sat = { hours: 8, startTime: '7:00', startAP: 'AM', endTime: '3:30', endAP: 'PM', proj: '' };
+            data.leave.wed = { hours: 8, startTime: '9:00', startAP: 'AM', endTime: '5:00', endAP: 'PM', proj: '' };
+            data.travel.mon = { hours: 0.5, startTime: '8:30', startAP: 'AM', endTime: '9:00', endAP: 'AM', proj: '' };
+            data.travel.thu = { hours: 0.5, startTime: '8:30', startAP: 'AM', endTime: '9:00', endAP: 'AM', proj: '' };
+            data.project.mon = { hours: 4, startTime: '9:00', startAP: 'AM', endTime: '1:00', endAP: 'PM', proj: 'client' };
+            data.project.tue = { hours: 4, startTime: '1:00', startAP: 'PM', endTime: '5:00', endAP: 'PM', proj: 'inhome' };
+        }
+        initData();
+
+        function formatDateKey(date) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function getWeekDates(offset = 0) {
+            const base = new Date('2026-02-01');
+            const start = new Date(base);
+            start.setDate(base.getDate() - base.getDay() + (offset * 7));
+            return days.map((key, i) => {
+                const d = new Date(start);
+                d.setDate(start.getDate() + i);
+                const dateKey = formatDateKey(d);
+                const holidayName = publicHolidays[dateKey] || null;
+                return { 
+                    key, 
+                    name: dayNames[i], 
+                    date: d.getDate(), 
+                    month: d.toLocaleString('en-AU', { month: 'short' }),
+                    isWeekend: d.getDay() === 0 || d.getDay() === 6,
+                    isToday: d.toDateString() === base.toDateString(),
+                    isHoliday: !!holidayName,
+                    holidayName: holidayName
+                };
+            });
+        }
+
+        function parseTime(timeStr) {
+            if (!timeStr) return null;
+            const match = timeStr.match(/^(\d{1,2}):?(\d{2})?$/);
+            if (!match) return null;
+            const h = parseInt(match[1]);
+            const m = parseInt(match[2]) || 0;
+            if (h < 1 || h > 12 || m < 0 || m > 59) return null;
+            return { h, m };
+        }
+
+        function calcHours(startTime, startAP, endTime, endAP) {
+            const start = parseTime(startTime);
+            const end = parseTime(endTime);
+            if (!start || !end) return 0;
+
+            let sh = start.h, sm = start.m;
+            let eh = end.h, em = end.m;
+
+            if (startAP === 'PM' && sh !== 12) sh += 12;
+            if (startAP === 'AM' && sh === 12) sh = 0;
+            if (endAP === 'PM' && eh !== 12) eh += 12;
+            if (endAP === 'AM' && eh === 12) eh = 0;
+
+            const diff = (eh * 60 + em) - (sh * 60 + sm);
+            return diff > 0 ? diff / 60 : 0;
+        }
+
+        function updateWeekLabel() {
+            const dates = getWeekDates(config.weekOffset);
+            document.getElementById('weekLabel').textContent = `${dates[0].date} ${dates[0].month} - ${dates[6].date} ${dates[6].month} 2026`;
+        }
+
+        function icon(t) {
+            const i = {
+                work: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>',
+                leave: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+                travel: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8v4.2c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/></svg>',
+                training: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
+                project: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
+                ooo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>'
+            };
+            return i[t] || i.work;
+        }
+
+        function generateTable() {
+            const dates = getWeekDates(config.weekOffset);
+            const table = document.getElementById('timesheetTable');
+
+            let types = [...entryTypes];
+            if (config.timesheetType === 'project') {
+                types.push({ id: 'project', label: 'Project', icon: 'project', isProject: true });
+            }
+
+            let html = '<thead><tr><th class="row-label">Entry Type</th>';
+            dates.forEach(d => {
+                let c = 'day-header';
+                if (d.isHoliday) c += ' holiday';
+                else if (d.isWeekend) c += ' weekend';
+                if (d.isToday) c += ' today';
+                
+                let holidayBadge = '';
+                if (d.isHoliday) {
+                    holidayBadge = `<div class="holiday-badge">${d.holidayName}</div>`;
+                }
+                
+                html += `<th class="${c}">
+                    <div class="day-name">${d.name}</div>
+                    <div class="day-date">${d.date}</div>
+                    ${holidayBadge}
+                </th>`;
+            });
+            html += '<th class="total-col">Total</th></tr></thead><tbody>';
+
+            types.forEach(type => {
+                html += '<tr>';
+                html += `<td class="row-label"><div class="row-label-content"><div class="row-icon ${type.icon}">${icon(type.icon)}</div><span class="row-label-text">${type.label}</span></div></td>`;
+
+                let rowTotal = 0;
+                dates.forEach(d => {
+                    const r = data[type.id]?.[d.key] || { hours: 0, startTime: '', startAP: 'AM', endTime: '', endAP: 'PM', proj: '' };
+                    let hrs = r.hours;
+                    if (config.entryType === 'startend' && r.startTime && r.endTime) {
+                        hrs = calcHours(r.startTime, r.startAP, r.endTime, r.endAP);
+                    }
+                    rowTotal += parseFloat(hrs) || 0;
+                    const hasVal = hrs > 0;
+
+                    let cellClass = 'input-cell';
+                    if (d.isHoliday) cellClass += ' holiday';
+                    else if (d.isWeekend) cellClass += ' weekend';
+                    if (hasVal) cellClass += ' has-value';
+
+                    if (config.entryType === 'hours') {
+                        let cell = '';
+                        if (type.isProject) {
+                            cell = `<select class="proj-sel" onchange="upd('${type.id}','${d.key}','proj',this.value)">${projects.map(p => `<option value="${p.id}" ${r.proj === p.id ? 'selected' : ''}>${p.label}</option>`).join('')}</select>`;
+                        }
+                        cell += `<input type="number" class="hours-input" value="${hrs || ''}" placeholder="0" min="0" max="24" step="0.5" onchange="upd('${type.id}','${d.key}','hours',this.value)">`;
+                        html += `<td class="${cellClass}">${cell}</td>`;
+                    } else {
+                        let proj = '';
+                        if (type.isProject) {
+                            proj = `<select class="proj-sel" onchange="upd('${type.id}','${d.key}','proj',this.value)">${projects.map(p => `<option value="${p.id}" ${r.proj === p.id ? 'selected' : ''}>${p.label}</option>`).join('')}</select>`;
+                        }
+                        const hrsDisp = hrs > 0 ? `<div class="calc-hrs">${hrs.toFixed(1)}h</div>` : `<div class="calc-hrs empty">-</div>`;
+                        html += `<td class="${cellClass}">
+                            <div class="time-entry">
+                                ${proj}
+                                <div class="time-row">
+                                    <span class="time-lbl">In</span>
+                                    <input type="text" class="time-input" value="${r.startTime}" placeholder="9:00" 
+                                        onchange="upd('${type.id}','${d.key}','startTime',this.value)">
+                                    <select class="ampm-select" onchange="upd('${type.id}','${d.key}','startAP',this.value)">
+                                        <option value="AM" ${r.startAP === 'AM' ? 'selected' : ''}>AM</option>
+                                        <option value="PM" ${r.startAP === 'PM' ? 'selected' : ''}>PM</option>
+                                    </select>
+                                </div>
+                                <div class="time-row">
+                                    <span class="time-lbl">Out</span>
+                                    <input type="text" class="time-input" value="${r.endTime}" placeholder="5:00" 
+                                        onchange="upd('${type.id}','${d.key}','endTime',this.value)">
+                                    <select class="ampm-select" onchange="upd('${type.id}','${d.key}','endAP',this.value)">
+                                        <option value="AM" ${r.endAP === 'AM' ? 'selected' : ''}>AM</option>
+                                        <option value="PM" ${r.endAP === 'PM' ? 'selected' : ''}>PM</option>
+                                    </select>
+                                </div>
+                                ${hrsDisp}
+                            </div>
+                        </td>`;
+                    }
+                });
+                html += `<td class="total-cell">${rowTotal.toFixed(1)}</td></tr>`;
+            });
+
+            html += '</tbody><tfoot><tr><td class="row-label">Daily Total</td>';
+            let grandTotal = 0;
+            dates.forEach(d => {
+                let dayTotal = 0;
+                types.forEach(type => {
+                    const r = data[type.id]?.[d.key] || { hours: 0 };
+                    let hrs = r.hours;
+                    if (config.entryType === 'startend' && r.startTime && r.endTime) {
+                        hrs = calcHours(r.startTime, r.startAP, r.endTime, r.endAP);
+                    }
+                    dayTotal += parseFloat(hrs) || 0;
+                });
+                grandTotal += dayTotal;
+                html += `<td>${dayTotal.toFixed(1)}</td>`;
+            });
+            html += `<td class="grand-total">${grandTotal.toFixed(1)}</td></tr></tfoot>`;
+
+            table.innerHTML = html;
+
+            document.getElementById('totalHours').textContent = grandTotal.toFixed(1) + 'h';
+            let leave = 0;
+            dates.forEach(d => {
+                const r = data.leave?.[d.key] || { hours: 0 };
+                let hrs = r.hours;
+                if (config.entryType === 'startend' && r.startTime && r.endTime) hrs = calcHours(r.startTime, r.startAP, r.endTime, r.endAP);
+                leave += parseFloat(hrs) || 0;
+            });
+            document.getElementById('leaveHours').textContent = leave.toFixed(1) + 'h';
+            document.getElementById('overtimeHours').textContent = Math.max(0, grandTotal - 38).toFixed(1) + 'h';
+        }
+
+        function upd(type, day, field, value) {
+            if (!data[type]) data[type] = {};
+            if (!data[type][day]) data[type][day] = { hours: 0, startTime: '', startAP: 'AM', endTime: '', endAP: 'PM', proj: '' };
+            
+            if (field === 'hours') {
+                data[type][day].hours = parseFloat(value) || 0;
+            } else {
+                data[type][day][field] = value;
+            }
+
+            if (config.entryType === 'startend') {
+                const r = data[type][day];
+                if (r.startTime && r.endTime) {
+                    r.hours = calcHours(r.startTime, r.startAP, r.endTime, r.endAP);
+                }
+            }
+            generateTable();
+        }
+
+        function updateEmployee() {
+            const sel = document.getElementById('employeeSelect');
+            const opt = sel.options[sel.selectedIndex];
+            const initials = sel.value;
+            const name = opt.dataset.name;
+            const [c1, c2] = opt.dataset.color.split(',');
+
+            // Update avatar in dropdown
+            const avatar = document.getElementById('empAvatar');
+            avatar.textContent = initials;
+            avatar.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
+
+            // Update header name + avatar
+            document.querySelector('.user-info span').textContent = name;
+            const headerAvatar = document.querySelector('.user-avatar');
+            headerAvatar.textContent = initials;
+            headerAvatar.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
+
+            // Update timesheet title
+            document.querySelector('.timesheet-title h2').textContent = `${name.split(' ')[0]}'s Timesheet`;
+        }
+
+        function updateConfig() {
+            config.workType = document.getElementById('workType').value;
+            config.timesheetType = document.getElementById('timesheetType').value;
+            config.entryType = document.getElementById('entryType').value;
+            generateTable();
+        }
+
+        function changeWeek(offset) {
+            config.weekOffset += offset;
+            generateTable();
+            updateWeekLabel();
+        }
+
+        function addNewRow() {
+            const name = prompt('Enter new entry type name:');
+            if (name && name.trim()) {
+                const id = name.toLowerCase().replace(/\s+/g, '-');
+                entryTypes.push({ id, label: name.trim(), icon: 'work' });
+                data[id] = {};
+                days.forEach(d => { data[id][d] = { hours: 0, startTime: '', startAP: 'AM', endTime: '', endAP: 'PM', proj: '' }; });
+                generateTable();
+            }
+        }
+
+        generateTable();
+        updateWeekLabel();
+    </script>
+</body>
+</html>
