@@ -1,8 +1,15 @@
-'use client';
-import dynamic from 'next/dynamic';
+import type { Metadata } from 'next';
+import TimesheetLoader from './TimesheetLoader';
 
-const TimesheetPageClient = dynamic(() => import('@/src/components/timesheet/TimesheetPageClient'), { ssr: false });
+export const metadata: Metadata = {
+  title:       'Timesheet',
+  description: 'Review and export weekly timesheets per worker — track regular hours, leave, travel, and training entries.',
+  openGraph: {
+    title:       'Timesheet | HR Nexus',
+    description: 'Weekly timesheet management with export and entry-type breakdown.',
+  },
+};
 
 export default function TimesheetPage() {
-  return <TimesheetPageClient />;
+  return <TimesheetLoader />;
 }

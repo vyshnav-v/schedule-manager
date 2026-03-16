@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { Clock, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import Spinner from '../ui/Spinner';
 import { logApi } from '../../utils/api';
 import type { ShiftLog } from '../../types';
 
@@ -102,15 +103,24 @@ export default function LogsPageClient() {
                   className="pl-9 pr-3 py-2 text-sm border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
-              <button onClick={load} className="p-2 hover:bg-slate-200 rounded-lg transition-colors">
-                <RefreshCw className={`w-4 h-4 text-slate-600 ${loading ? 'animate-spin' : ''}`} />
+              <button onClick={load} title="Refresh" className="p-2 hover:bg-slate-200 rounded-lg transition-colors">
+                {loading
+                  ? <Spinner size="sm" color="text-blue-500" />
+                  : <RefreshCw className="w-4 h-4 text-slate-600" />
+                }
               </button>
             </div>
           </div>
 
           {/* Table */}
           {loading ? (
-            <div className="p-12 text-center text-slate-400 text-sm animate-pulse">Loading logs…</div>
+            <div className="p-14 flex flex-col items-center justify-center gap-4">
+              <Spinner size="lg" color="text-blue-400" />
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="h-2.5 w-36 rounded-full bg-slate-200 animate-pulse" />
+                <div className="h-2 w-24 rounded-full bg-slate-100 animate-pulse" />
+              </div>
+            </div>
           ) : error ? (
             <div className="p-8 flex flex-col items-center gap-3 text-center">
               <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center">

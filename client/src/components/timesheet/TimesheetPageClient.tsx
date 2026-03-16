@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { Clock, Plus, CheckCircle } from "lucide-react";
+import Spinner from "../ui/Spinner";
 import ConfigPanel from "./ConfigPanel";
 import WeekNav from "./WeekNav";
 import TimesheetTable from "./TimesheetTable";
@@ -153,10 +154,11 @@ export default function TimesheetPageClient() {
             </div>
           )}
 
-          {/* Loading skeleton */}
+          {/* Loading overlay */}
           {isLoading && !error && (
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 text-blue-600 rounded-lg text-sm animate-pulse">
-              Loading timesheet data…
+            <div className="mb-4 flex items-center gap-3 px-4 py-3 bg-white border border-slate-200 rounded-lg shadow-sm text-sm text-slate-500">
+              <Spinner size="sm" color="text-blue-500" />
+              <span>Loading timesheet data…</span>
             </div>
           )}
 
@@ -188,8 +190,16 @@ export default function TimesheetPageClient() {
               <WeekNav />
             </div>
 
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto relative">
               <TimesheetTable />
+              {isLoading && (
+                <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <Spinner size="md" color="text-blue-500" />
+                    <span className="text-xs text-slate-400 font-medium">Refreshing…</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <button

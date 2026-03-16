@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
+import Spinner from '../ui/Spinner';
 import StatsBar from './StatsBar';
 import CalendarView from './CalendarView';
 import MatrixView from './MatrixView';
@@ -11,6 +12,18 @@ import DetailPanel from './DetailPanel';
 import { useScheduleStore } from '../../store/scheduleStore';
 import { useScheduleData } from '../../hooks/useScheduleData';
 import { formatWeekLabelScheduling, getWeekStartMonday } from '../../utils/date';
+
+function LoadingSkeleton() {
+  return (
+    <div className="p-10 flex flex-col items-center justify-center gap-4 min-h-[260px]">
+      <Spinner size="lg" color="text-blue-400" />
+      <div className="flex flex-col items-center gap-2">
+        <div className="h-2.5 w-40 rounded-full bg-slate-200 animate-pulse" />
+        <div className="h-2 w-28 rounded-full bg-slate-100 animate-pulse" />
+      </div>
+    </div>
+  );
+}
 
 export default function SchedulingPageClient() {
   useScheduleData();
@@ -132,11 +145,7 @@ export default function SchedulingPageClient() {
 
         {/* Calendar View */}
         <div className={`bg-white rounded-xl border border-slate-200 overflow-hidden ${viewMode !== 'calendar' ? 'hidden' : ''}`}>
-          {isLoading ? (
-            <div className="p-16 text-center text-slate-400 text-sm animate-pulse">Loading shifts…</div>
-          ) : (
-            <CalendarView />
-          )}
+          {isLoading ? <LoadingSkeleton /> : <CalendarView />}
         </div>
 
         {/* Matrix View */}
@@ -145,20 +154,12 @@ export default function SchedulingPageClient() {
             <h3 className="font-semibold text-slate-900">Worker ↔ Participant Assignment Matrix</h3>
             <p className="text-sm text-slate-500 mt-1">Visual representation of many-to-many relationships</p>
           </div>
-          {isLoading ? (
-            <div className="p-16 text-center text-slate-400 text-sm animate-pulse">Loading…</div>
-          ) : (
-            <MatrixView />
-          )}
+          {isLoading ? <LoadingSkeleton /> : <MatrixView />}
         </div>
 
         {/* List View */}
         <div className={`bg-white rounded-xl border border-slate-200 overflow-hidden ${viewMode !== 'list' ? 'hidden' : ''}`}>
-          {isLoading ? (
-            <div className="p-16 text-center text-slate-400 text-sm animate-pulse">Loading…</div>
-          ) : (
-            <ListView />
-          )}
+          {isLoading ? <LoadingSkeleton /> : <ListView />}
         </div>
       </main>
 

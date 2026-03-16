@@ -3,6 +3,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Calendar, Clock, FileText, X } from 'lucide-react';
+import { useNavStore } from '../../store/navStore';
+import Spinner from './Spinner';
 
 const NAV = [
   { href: '/scheduling', label: 'Scheduling', Icon: Calendar },
@@ -21,8 +23,16 @@ function HamburgerIcon({ className }: { className?: string }) {
 }
 
 export default function FloatingNav() {
-  const pathname = usePathname();
-  const [open, setOpen] = useState(false);
+  const pathname                       = usePathname();
+  const [open, setOpen]                = useState(false);
+  const { navigating, setNavigating }  = useNavStore();
+
+  const handleNavClick = (href: string) => {
+    if (!pathname.startsWith(href)) {
+      setNavigating(true);
+    }
+    setOpen(false);
+  };
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex items-center gap-2" suppressHydrationWarning>
@@ -37,19 +47,24 @@ export default function FloatingNav() {
         style={{ boxShadow: open ? '0 8px 32px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08)' : 'none' }}
       >
         {NAV.map(({ href, label, Icon }) => {
-          const active = pathname.startsWith(href);
+          const active  = pathname.startsWith(href);
+          const loading = navigating && !active && pathname !== href;
+
           return (
             <Link
               key={href}
               href={href}
-              onClick={() => setOpen(false)}
+              onClick={() => handleNavClick(href)}
               className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all duration-150 whitespace-nowrap ${
                 active
                   ? 'bg-blue-600 text-white shadow-sm'
                   : 'text-slate-500 hover:text-slate-800 hover:bg-slate-100'
               }`}
             >
-              <Icon className="w-3.5 h-3.5 shrink-0" />
+              {loading
+                ? <Spinner size="sm" color={active ? 'text-white' : 'text-slate-400'} />
+                : <Icon className="w-3.5 h-3.5 shrink-0" />
+              }
               {label}
             </Link>
           );
@@ -69,7 +84,9 @@ export default function FloatingNav() {
       >
         {open
           ? <X className="w-4 h-4" />
-          : <HamburgerIcon className="w-4 h-4" />
+          : navigating
+            ? <Spinner size="sm" color="text-blue-500" />
+            : <HamburgerIcon className="w-4 h-4" />
         }
       </button>
     </div>

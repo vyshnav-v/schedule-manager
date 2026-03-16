@@ -1,8 +1,15 @@
-'use client';
-import dynamic from 'next/dynamic';
+import type { Metadata } from 'next';
+import SchedulingLoader from './SchedulingLoader';
 
-const SchedulingPageClient = dynamic(() => import('@/src/components/scheduling/SchedulingPageClient'), { ssr: false });
+export const metadata: Metadata = {
+  title:       'Scheduling',
+  description: 'View and manage weekly shift schedules for support workers and participants. Switch between calendar, matrix, and list views.',
+  openGraph: {
+    title:       'Shift Scheduling | HR Nexus',
+    description: 'Manage weekly shift schedules across workers and participants.',
+  },
+};
 
 export default function SchedulingPage() {
-  return <SchedulingPageClient />;
+  return <SchedulingLoader />;
 }
